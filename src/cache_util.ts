@@ -99,5 +99,6 @@ export async function deleteModelWasmInCache(
   } else {
     wasmCache = new tvmjs.ArtifactCache("webllm/wasm");
   }
-  await wasmCache.deleteInCache(modelRecord.model_lib);
+  if (typeof modelRecord.model_lib === "string")
+    await wasmCache.deleteInCache(modelRecord.model_lib as string);
 }

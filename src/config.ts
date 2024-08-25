@@ -245,7 +245,7 @@ export function postInitAndCheckGenerationConfigValues(
 export interface ModelRecord {
   model: string;
   model_id: string;
-  model_lib: string;
+  model_lib: string | ArrayBuffer;
   overrides?: ChatOptions;
   vram_required_MB?: number;
   low_resource_required?: boolean;

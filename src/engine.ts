@@ -180,32 +180,38 @@ export class MLCEngine implements MLCEngineInterface {
       ...chatOpts,
     } as ChatConfig;
 
-    // load tvm wasm
-    let wasmCache: tvmjs.ArtifactCacheTemplate;
-    if (this.appConfig.useIndexedDBCache) {
-      wasmCache = new tvmjs.ArtifactIndexedDBCache("webllm/wasm");
-    } else {
-      wasmCache = new tvmjs.ArtifactCache("webllm/wasm");
+    let wasmSource: ArrayBuffer;
+    if (modelRecord.model_lib instanceof ArrayBuffer) {
+      wasmSource = modelRecord.model_lib;
     }
-
-    const wasmUrl = modelRecord.model_lib;
-    if (wasmUrl === undefined) {
-      throw new MissingModelWasmError(modelRecord.model_id);
-    }
-    const fetchWasmSource = async () => {
-      if (wasmUrl.includes("localhost")) {
-        // do not cache wasm on local host as we might update code frequently
-        return (await fetch(wasmUrl)).arrayBuffer();
-      } else if (!wasmUrl.startsWith("http")) {
-        // do not cache wasm on the same server as it can also refresh
-        // rely on the normal caching strategy
-        return (await fetch(new URL(wasmUrl, baseUrl).href)).arrayBuffer();
+    else{
+      // load tvm wasm
+      let wasmCache: tvmjs.ArtifactCacheTemplate;
+      if (this.appConfig.useIndexedDBCache) {
+        wasmCache = new tvmjs.ArtifactIndexedDBCache("webllm/wasm");
       } else {
-        // use cache
-        return await wasmCache.fetchWithCache(wasmUrl, "arraybuffer");
+        wasmCache = new tvmjs.ArtifactCache("webllm/wasm");
       }
-    };
-    const wasmSource = await fetchWasmSource();
+      
+      const wasmUrl = modelRecord.model_lib;
+      if (wasmUrl === undefined) {
+        throw new MissingModelWasmError(modelRecord.model_id);
+      }
+      const fetchWasmSource = async () => {
+        if (wasmUrl.includes("localhost")) {
+          // do not cache wasm on local host as we might update code frequently
+          return (await fetch(wasmUrl)).arrayBuffer();
+        } else if (!wasmUrl.startsWith("http")) {
+          // do not cache wasm on the same server as it can also refresh
+          // rely on the normal caching strategy
+          return (await fetch(new URL(wasmUrl, baseUrl).href)).arrayBuffer();
+        } else {
+          // use cache
+          return await wasmCache.fetchWithCache(wasmUrl, "arraybuffer");
+        }
+      };
+      wasmSource = await fetchWasmSource();
+    }
 
     const tvm = await tvmjs.instantiate(
       new Uint8Array(wasmSource),
