@@ -72,6 +72,7 @@ export interface TokenizerInfo {
  */
 export interface ChatConfig {
   // First three fields affect the entire conversation, i.e. used in `ChatModule.reload()`
+  tokenizer_bytes?: ArrayBuffer;
   tokenizer_files: Array<string>;
   tokenizer_info?: TokenizerInfo;
   token_table_postproc_method?: string; // TODO: backward compatibility, remove soon
@@ -246,6 +247,7 @@ export interface ModelRecord {
   model: string;
   model_id: string;
   model_lib: string | ArrayBuffer;
+  chat_config?: string;
   overrides?: ChatOptions;
   vram_required_MB?: number;
   low_resource_required?: boolean;

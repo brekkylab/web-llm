@@ -173,12 +173,21 @@ export class MLCEngine implements MLCEngineInterface {
     }
 
     // load config
-    const configUrl = new URL("mlc-chat-config.json", modelUrl).href;
-    this.config = {
-      ...(await configCache.fetchWithCache(configUrl, "json")),
-      ...modelRecord.overrides,
-      ...chatOpts,
-    } as ChatConfig;
+    if (modelRecord.chat_config) {
+      this.config = {
+        ...(JSON.parse(modelRecord.chat_config)),
+        ...modelRecord.overrides,
+        ...chatOpts,
+      } as ChatConfig;
+    }
+    else {
+      const configUrl = new URL("mlc-chat-config.json", modelUrl).href;
+      this.config = {
+        ...(await configCache.fetchWithCache(configUrl, "json")),
+        ...modelRecord.overrides,
+        ...chatOpts,
+      } as ChatConfig;
+    }
 
     let wasmSource: ArrayBuffer;
     if (modelRecord.model_lib instanceof ArrayBuffer) {
@@ -1031,7 +1040,9 @@ export class MLCEngine implements MLCEngineInterface {
       modelCache = new tvmjs.ArtifactCache("webllm/model");
     }
 
-    if (config.tokenizer_files.includes("tokenizer.json")) {
+    if (config.tokenizer_bytes) {
+      return Tokenizer.fromJSON(config.tokenizer_bytes);
+    } else if (config.tokenizer_files.includes("tokenizer.json")) {
       const url = new URL("tokenizer.json", baseUrl).href;
       const model = await modelCache.fetchWithCache(url, "arraybuffer");
       return Tokenizer.fromJSON(model);
